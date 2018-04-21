@@ -6,7 +6,7 @@
 	<groupId>com.stockstats</groupId>
 	<artifactId>stockstats</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 
 	<name>stockstats</name>
 	<description>Stock Stats API</description>
