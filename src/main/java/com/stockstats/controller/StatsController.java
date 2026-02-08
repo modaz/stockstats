@@ -8,13 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.stockstats.dto.StatsRequest;
@@ -27,15 +26,18 @@ import com.stockstats.service.KibotExecutorService;
 import com.stockstats.service.KibotService;
 
 @RestController
-@RequestMapping("/api/v1/")
+@RequestMapping("/api/v1")
 public class StatsController {
 
-	@Autowired
-	private KibotService kibotService;
-	@Autowired
-	private KibotExecutorService kibotExecutorService;
-	
-	@RequestMapping(value="/stats", method = RequestMethod.GET)
+	private final KibotService kibotService;
+	private final KibotExecutorService kibotExecutorService;
+
+	public StatsController(KibotService kibotService, KibotExecutorService kibotExecutorService) {
+		this.kibotService = kibotService;
+		this.kibotExecutorService = kibotExecutorService;
+	}
+
+	@GetMapping("/stats")
 	public List<StatsResponse> processStats(@Valid @ModelAttribute StatsRequest statsRequest, BindingResult result)
 			throws SymbolNotFoundException, StatsNotFoundException, BadStatsRequestException {
 		if (result.hasErrors()) {
@@ -57,7 +59,7 @@ public class StatsController {
 		return stats;
 	}
 	
-	@RequestMapping(value="/parallelstats", method = RequestMethod.GET)
+	@GetMapping("/parallelstats")
 	public List<StatsResponse> processParallelStats(@Valid @ModelAttribute StatsRequest statsRequest, BindingResult result)
 			throws SymbolNotFoundException, StatsNotFoundException, BadStatsRequestException, KitbotParallelProcessingException {
 		if (result.hasErrors()) {

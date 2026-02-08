@@ -1,49 +1,62 @@
 package com.stockstats.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-
-import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import java.util.Map;
 
 @Component
 public class KibotLoginFilter implements Filter {
 
-	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-			throws IOException, ServletException {
+    private static final String KIBOT_LOGIN_URL = "http://api.kibot.com?action=login&user=guest&password=guest";
 
-		try {
-			doKibotLogin();
-			chain.doFilter(request, response);
-		} catch (Exception ex) {
-			request.setAttribute("errorMessage", ex);
-			request.getRequestDispatcher("/WEB-INF/views/jsp/error.jsp").forward(request, response);
-		}
-	}
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
 
-	private void doKibotLogin() throws URISyntaxException {
-		RestTemplate restTemplate = new RestTemplate();
-		URI url = new URI("http://api.kibot.com?action=login&user=guest&password=guest");
-		restTemplate.execute(url, HttpMethod.GET, null, null);
-	}
+        try {
+            doKibotLogin();
+            chain.doFilter(request, response);
+        } catch (Exception ex) {
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding("UTF-8");
+            ((jakarta.servlet.http.HttpServletResponse) response).setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
 
-	@Override
-	public void destroy() {
-		// ...
-	}
+            Map<String, Object> errorBody = Map.of(
+                    "status", 503,
+                    "message", "Kibot login failed: " + ex.getMessage()
+            );
+            new ObjectMapper().writeValue(response.getWriter(), errorBody);
+        }
+    }
 
-	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
-		//
-	}
+    private void doKibotLogin() throws URISyntaxException {
+        RestTemplate restTemplate = new RestTemplate();
+        URI url = new URI(KIBOT_LOGIN_URL);
+        restTemplate.getForEntity(url, String.class);
+    }
 
+    @Override
+    public void destroy() {
+        // no-op
+    }
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        // no-op
+    }
 }
